@@ -6,10 +6,12 @@ import neighborhoodRoutes from "./neighborhoodRoutes.js";
 import commentRoutes from "./commentRoutes.js";
 import listingRoutes from "./listingRoutes.js";
 import connectionRequestRouter from "./connectionRequestRoutes.js";
+import passwordRoutes from "./passwordRoutes.js";
 
 const allRoutes = express.Router();
 
 allRoutes.use("/auth", authRoutes);
+allRoutes.use("/password", passwordRoutes);
 allRoutes.use("/posts", postRoutes);
 allRoutes.use("/neighborhoods", neighborhoodRoutes);
 allRoutes.use("/comments", commentRoutes);

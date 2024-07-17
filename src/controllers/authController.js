@@ -1,10 +1,11 @@
 import User from "../models/userModel.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import axios from "axios";
 
 const authController = {
   register: async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, location } = req.body;
     try {
       let user = await User.findOne({ email });
       if (user) return res.status(400).json({ message: "User already exists" });
@@ -12,7 +13,41 @@ const authController = {
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
 
-      user = new User({ email, password: hashedPassword });
+      let coordinates;
+      if (location.coordinates && location.coordinates.length === 2) {
+        coordinates = location.coordinates;
+      } else if (location.address) {
+        // Optional: Convert address to coordinates using a geocoding API
+        const response = await axios.get(
+          `https://maps.googleapis.com/maps/api/geocode/json`,
+          {
+            params: {
+              address: location.address,
+              key: process.env.GOOGLE_MAPS_API_KEY,
+            },
+          }
+        );
+
+        if (response.data.results.length > 0) {
+          const loc = response.data.results[0].geometry.location;
+          coordinates = [loc.lng, loc.lat];
+        } else {
+          return res.status(400).json({ message: "Invalid address" });
+        }
+      } else {
+        return res.status(400).json({ message: "Location data is required" });
+      }
+
+      user = new User({
+        email,
+        password: hashedPassword,
+        location: {
+          type: "Point",
+          coordinates: coordinates,
+          address: location.address,
+        },
+      });
+
       await user.save();
 
       const payload = { user: { id: user.id } };
